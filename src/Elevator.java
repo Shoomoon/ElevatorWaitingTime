@@ -1,3 +1,7 @@
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
 public class Elevator {
     private final int startLevel;
     private final int endLevel;
@@ -8,6 +12,7 @@ public class Elevator {
     private final int capacity = 10; // maximum 10 employees
     private final int weightCapacity = 1300; // maximum weight 1300kg
     private final double maxWaitingTime = 10;
+    private final List<Employee> passengers;
     public Elevator(int level0, int level1, double acceleration, double brakeAcceleration, double maxspeed) {
         this.startLevel = level0;
         this.endLevel = level1;
@@ -15,6 +20,7 @@ public class Elevator {
         this.brakeAcceleration = brakeAcceleration;
         this.maxSpeed = maxspeed;
         this.timeAtLevel1 = 0;
+        this.passengers = new ArrayList<>();
     }
 
     public double updateTimeAtLevel1(double timeDelivery) {
@@ -46,5 +52,48 @@ public class Elevator {
 
     public double getTimeAtLevel1() {
         return timeAtLevel1;
+    }
+
+    public boolean checkIfLaunch(double nextArriveTime) {
+        return this.passengers.size() >= this.capacity || !this.passengers.isEmpty() && this.passengers.get(this.passengers.size() - 1).getArriveTime() + this.maxWaitingTime < nextArriveTime;
+    }
+    public void launch(Building building) {
+        double totalTime = 0;
+        // sort passengers by his target level
+        this.passengers.sort(new Comparator<Employee>() {
+            @Override
+            public int compare(Employee o1, Employee o2) {
+                return o1.getTargetLevel() - o2.getTargetLevel();
+            }
+        });
+        int currentLevel = 1;
+        for (Employee employee: this.passengers) {
+            double distance = building.getDistanceBetweenLevels(employee.getTargetLevel(), currentLevel);
+            totalTime += timeCost(distance);
+            currentLevel = employee.getTargetLevel();
+        }
+        // move from last stop level to level 1
+        totalTime += timeCost(building.getDistanceBetweenLevels(currentLevel, 1));
+        this.timeAtLevel1 += totalTime;
+        this.passengers.clear();
+    }
+
+    public boolean acceptPassenger(Employee employee) {
+        return this.startLevel <= employee.getTargetLevel() && employee.getTargetLevel() <= this.endLevel && this.passengers.size() < this.capacity;
+    }
+    public int compareTo(Elevator otherElevator) {
+        int passengersSizeDiff = this.passengers.size() - otherElevator.passengers.size();
+        if (passengersSizeDiff < 0) {
+            return -1;
+        } else if (passengersSizeDiff > 0) {
+            return 1;
+        }
+        return 0;
+    }
+    public void addPassenger(Employee employee) {
+        if (this.passengers.size() >= capacity) {
+            throw new RuntimeException("The number of passengers has reached the capacity of the elevator!");
+        }
+        this.passengers.add(employee);
     }
 }

@@ -1,6 +1,3 @@
-import javafx.scene.Scene;
-import javafx.scene.layout.StackPane;
-import javafx.stage.Stage;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartFrame;
 import org.jfree.chart.JFreeChart;
@@ -10,10 +7,11 @@ import java.util.*;
 
 public class Main {
     public static void main(String[] args) {
+        // init building
         int maxLevel = 50;
-        List<Double> levelHeight = generatorLevels(maxLevel);
+        List<Double> levelHeight = initLevelHeight(maxLevel);
         Building building = new Building(levelHeight);
-
+        // init elevators
         double acceleration = 1.0; // 1.0 m/s^2
         double brakeAcceleration = -1.0; // acceleration of stop, 1 m/s^2
         double maxSpeed = 3.0; // 3.0 m/s
@@ -25,43 +23,54 @@ public class Main {
             flexibleElevators.add(new Elevator(maxLevel * i / elevatorCount, maxLevel * (i + 1) / elevatorCount,
                     acceleration, brakeAcceleration, maxSpeed));
         }
-
-        List<Double> timeCostForSolidRangeElevator = new ArrayList<>();
-        List<Double> timeCostForFlexibleRangeElevator = new ArrayList<>();
-        for (int i = 1; i <= 100000; i += 100) {
-            List<Employee> employees = generatorEmployees(maxLevel, i);
-            timeCostForSolidRangeElevator.add(building.timeCost(solidElevators, employees));
-            timeCostForFlexibleRangeElevator.add(building.timeCost(flexibleElevators, employees));
-        }
+        // init test case
+        int maxEmployeeCount = 100000;
+        List<Employee> employees = initEmployees(maxLevel, maxEmployeeCount);
+        List<Double> timeCostForSolidRangeElevator = building.timeCost(solidElevators, employees);
+        List<Double> timeCostForFlexibleRangeElevator = building.timeCost(flexibleElevators, employees);
+        // plot the result
         plot(timeCostForSolidRangeElevator, timeCostForFlexibleRangeElevator);
     }
 
-    private static List<Double> generatorLevels(int levelCount) {
+    private static List<List<Employee>> generatorTestCases(int maxLevel) {
+        List<List<Employee>> testCases = new ArrayList<>();
+        int seed = 21541;
+        Random random = new Random(seed);
+        for (int i = 100; i <= 100000; i += 100) {
+            List<Employee> employees = initEmployees(maxLevel, i);
+            testCases.add(employees);
+        }
+        return testCases;
+    }
+
+    private static List<Double> initLevelHeight(int levelCount) {
         double eachLevelHeight = 2.743; // 9 feet = 2.743m
         List<Double> levels = new ArrayList<>();
-        levels.add(2 * eachLevelHeight); // the height of the first level is 18 feet
-        for (int i = 1; i < levelCount; i++) {
+        levels.add(0.0); // the height of the first floor is 0
+        levels.add(2 * eachLevelHeight); // the height of the first level (height of 2nd floor)is 18 feet
+        for (int i = 2; i <= levelCount; i++) {
             levels.add(levels.get(i - 1) + eachLevelHeight);
         }
         return levels;
     }
 
-    private static List<Employee> generatorEmployees(int maxLevel, int employeeCount) {
+    private static List<Employee> initEmployees(int maxLevel, int employeeCount) {
         // return sorted employees based on arriveTime
         // also we can use gaussian data
         List<Employee> employees = new ArrayList<>();
-        int seed = 21651;
+        int seed = 24934541;
         Random random = new Random(seed);
+        int maxTimeGap = 100;
         double arriveTime = 0;
         for (int i = 0; i < employeeCount; i++) {
             int targetLevel = random.nextInt(2, maxLevel + 1);
-            arriveTime += random.nextDouble(100);
+            arriveTime += random.nextDouble(maxTimeGap);
             employees.add(new Employee(arriveTime, targetLevel));
         }
         return employees;
     }
 
-    private static void plot(List<Double> t0, List<Double> t1) {
+    public static void plot(List<Double> t0, List<Double> t1) {
         DefaultXYDataset dataset = new DefaultXYDataset();
         double[][] data0 = new double[2][t0.size()];
         double[][] data1 = new double[2][t1.size()];

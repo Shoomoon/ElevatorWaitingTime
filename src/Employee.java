@@ -1,3 +1,5 @@
+import java.util.List;
+
 public class Employee {
     private final double arriveTime;
     private final int targetLevel;
@@ -13,4 +15,18 @@ public class Employee {
     public int getTargetLevel() {
         return targetLevel;
     }
+    public Elevator findTheBestElevator(List<Elevator> elevators) {
+        Elevator bestElevator = null;
+        for (Elevator elevator: elevators) {
+            if (elevator.acceptPassenger(this)) {
+                if (bestElevator == null) {
+                    bestElevator = elevator;
+                } else if (elevator.compareTo(bestElevator) < 0) {
+                    bestElevator = elevator;
+                }
+            }
+        }
+        return bestElevator;
+    }
+
 }

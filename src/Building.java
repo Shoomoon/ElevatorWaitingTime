@@ -1,4 +1,3 @@
-import javax.crypto.ExemptionMechanism;
 import java.util.*;
 
 public class Building {
@@ -7,53 +6,49 @@ public class Building {
         this.levelHeight= levelHeight;
     }
 
-    public double timeCost(List<Elevator> elevators, List<Employee> sortedEmployees) {
+    public List<Double> timeCost(List<Elevator> elevators, List<Employee> sortedEmployees) {
+        List<Double> timeRes = new ArrayList<>();
         // employees should be sorted based on arriveTime
-        List<Queue<Employee>> queues = new ArrayList<>();
-        for (int i = 0; i < elevators.size(); i++) {
-            queues.add(new LinkedList<>());
-        }
-        for (Employee e: sortedEmployees) {
-            arriveEmployee(e, elevators,);
-            findQueue(e, queues);
-        }
-
-        double timeCost = 0;
-        for (Elevator elevator: elevators) {
-            timeCost = Math.max(timeCost, elevator.getTimeAtLevel1());
-        }
-        return timeCost;
-    }
-
-    private void findQueue(Employee e, List<Queue<Employee>> queues) {
-        int minQueueSize = Integer.MAX_VALUE;
-
-    }
-
-    private double timeCostToDeliverAll(Elevator elevator, List<Employee> employees) {
-        employees.sort(new Comparator<Employee>() {
-            @Override
-            public int compare(Employee o1, Employee o2) {
-                return o1.getTargetLevel() - o2.getTargetLevel();
+        sortedEmployees.sort((o1, o2) -> {
+            double diff = o1.getArriveTime() - o2.getArriveTime();
+            if (diff < 0) {
+                return -1;
             }
+            if (o1.getArriveTime() > 0) {
+                return 1;
+            }
+
+            return 0;
         });
-        double totalTimeCost = 0;
-        int currentLevel = 1;
-        for (Employee employee: employees) {
-            double distance = getDistanceBetweenLevels(currentLevel, employee.getTargetLevel());
-            double timeCost = elevator.timeCost(distance);
-            currentLevel = employee.getTargetLevel();
-            totalTimeCost += timeCost;
+        //
+        for (Employee employee: sortedEmployees) {
+            launchElevators(elevators, employee.getArriveTime());
+            timeRes.add(latestTime(elevators));
+            Elevator elevator = employee.findTheBestElevator(elevators);
+            elevator.addPassenger(employee);
         }
-        // at last move from currentLevel to level 1
-        totalTimeCost += elevator.timeCost(getDistanceBetweenLevels(currentLevel, 1));
-        elevator.updateTimeAtLevel1(totalTimeCost);
-        return totalTimeCost;
+        launchElevators(elevators, Integer.MAX_VALUE);
+        timeRes.add(latestTime(elevators));
+        return timeRes;
     }
-    private double getDistanceBetweenLevels(int level0, int level1) {
-        return Math.abs(getHeight(level0) - getHeight(level1));
+
+    private Double latestTime(List<Elevator> elevators) {
+        double latestTimeAtLevel1 = 0;
+        for (Elevator elevator: elevators) {
+            latestTimeAtLevel1 = Math.max(latestTimeAtLevel1, elevator.getTimeAtLevel1());
+        }
+        return latestTimeAtLevel1;
     }
-    private double getHeight(int level) {
-        return levelHeight.get(level - 1);
+
+    private void launchElevators(List<Elevator> elevators, double nextArriveTime) {
+        for (Elevator elevator: elevators) {
+            if (elevator.checkIfLaunch(nextArriveTime)) {
+                elevator.launch(this);
+            }
+        }
+    }
+
+    public double getDistanceBetweenLevels(int level0, int level1) {
+        return Math.abs(levelHeight.get(level0 - 1) - levelHeight.get(level1 - 1));
     }
 }
