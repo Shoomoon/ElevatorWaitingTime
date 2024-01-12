@@ -1,4 +1,3 @@
-import org.junit.Before;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,39 +40,34 @@ class ElevatorTest {
     }
 
     @Test
-    void updateTimeAtLevel1() {
-        Assertions.assertEquals(5, elevator.updateTimeAtLevel1(5), accuracy);
-        Assertions.assertEquals(10, elevator.updateTimeAtLevel1(5), accuracy);
-        Assertions.assertEquals(15.03, elevator.updateTimeAtLevel1(5.03), accuracy);
-    }
-
-    @Test
     void timeCost() {
         assertTrue(timeCostForDistance(25, elevator.timeCost(25)));
         assertTrue(timeCostForDistance(10, elevator.timeCost(10)));
         assertTrue(timeCostForDistance(250, elevator.timeCost(250)));
     }
-    private boolean timeCostForDistance(double distance, double timeCost) {
+    private boolean timeCostForDistance(double distance, double totalTimeCost) {
         double maxSpeed = elevator.getMaxSpeed();
         double a = elevator.getAcceleration();
         double ba = elevator.getBrakeAcceleration();
 
+        double timeDeliver = totalTimeCost - 3 - 3;
+
         double timeBase = maxSpeed / a + maxSpeed / ba;
         double distanceBase = maxSpeed * timeBase / 2;
         if (distance < distanceBase) {
-            double t0 = maxSpeed / a * timeCost / timeBase;
-            double t1 = maxSpeed / ba * timeCost / timeBase;
-            if (!doubleEqual(t0 + t1, timeCost)) {
+            double t0 = maxSpeed / a * timeDeliver / timeBase;
+            double t1 = maxSpeed / ba * timeDeliver / timeBase;
+            if (!doubleEqual(t0 + t1, timeDeliver)) {
                 return false;
             }
-            double d = 0.5 * timeCost * t0 * a;
+            double d = 0.5 * timeDeliver * t0 * a;
             if (!doubleEqual(d, distance)) {
                 return false;
             }
         } else {
             double t0 = maxSpeed / a;
             double t1 = maxSpeed / ba;
-            double t2 = timeCost - t0 - t1;
+            double t2 = timeDeliver - t0 - t1;
             double d = 0.5*maxSpeed*(t0 + t1) + maxSpeed * t2;
             if (!doubleEqual(distance, d)) {
                 return false;
@@ -83,14 +77,6 @@ class ElevatorTest {
     }
     private boolean doubleEqual(double d0, double d1) {
         return Math.abs(d0 - d1) <= accuracy;
-    }
-
-    @Test
-    void getTimeAtLevel1() {
-        elevator.updateTimeAtLevel1(5);
-        Assertions.assertEquals(5, elevator.getTimeAtLevel1(), accuracy);
-        elevator.updateTimeAtLevel1(11.77);
-        Assertions.assertEquals(16.77, elevator.getTimeAtLevel1(), accuracy);
     }
 
     @Test
@@ -124,11 +110,14 @@ class ElevatorTest {
 
     @Test
     void launch() {
-        elevator.launch(building);
+        elevator.launch(building, 0);
         assertEquals(0, elevator.getTimeAtLevel1(), accuracy);
         elevator.addPassenger(passengers.get(0));
-        elevator.launch(building);
-        assertEquals(elevator.getTimeAtLevel1(), elevator.timeCost(building.getDistanceBetweenLevels(1, passengers.get(0).getTargetLevel())), accuracy);
+        elevator.launch(building, passengers.get(0).getArriveTime() + 11);
+        double actualArriveTime = elevator.timeCost(building.getDistanceBetweenLevels(1, passengers.get(0).getTargetLevel()));
+        actualArriveTime += elevator.timeCost(building.getDistanceBetweenLevels(passengers.get(0).getTargetLevel(), 1));
+        actualArriveTime += passengers.get(0).getArriveTime() + 10;
+        assertEquals(elevator.getTimeAtLevel1(), actualArriveTime, accuracy);
     }
 
     @Test

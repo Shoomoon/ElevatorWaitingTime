@@ -2,6 +2,8 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartFrame;
 import org.jfree.chart.JFreeChart;
 import org.jfree.data.xy.DefaultXYDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
 import java.util.*;
 
@@ -24,7 +26,7 @@ public class Main {
                     acceleration, brakeAcceleration, maxSpeed));
         }
         // init test case
-        int maxEmployeeCount = 100000;
+        int maxEmployeeCount = 100;
         List<Employee> employees = initEmployees(maxLevel, maxEmployeeCount);
         List<Double> timeCostForSolidRangeElevator = building.timeCost(solidElevators, employees);
         List<Double> timeCostForFlexibleRangeElevator = building.timeCost(flexibleElevators, employees);
@@ -60,7 +62,7 @@ public class Main {
         List<Employee> employees = new ArrayList<>();
         int seed = 24934541;
         Random random = new Random(seed);
-        int maxTimeGap = 100;
+        int maxTimeGap = 3;
         double arriveTime = 0;
         for (int i = 0; i < employeeCount; i++) {
             int targetLevel = random.nextInt(2, maxLevel + 1);
@@ -71,19 +73,17 @@ public class Main {
     }
 
     public static void plot(List<Double> t0, List<Double> t1) {
-        DefaultXYDataset dataset = new DefaultXYDataset();
-        double[][] data0 = new double[2][t0.size()];
-        double[][] data1 = new double[2][t1.size()];
+        XYSeries data0 = new XYSeries("Solid Elevator");
+        XYSeries data1 = new XYSeries("Flexible Elevator");
         for (int i = 0; i < t0.size(); i++) {
-            data0[0][i] = (i + 1) * 100;
-            data0[1][i] = t0.get(i);
+            data0.add(i, t0.get(i));
         }
         for (int i = 0; i < t1.size(); i++) {
-            data1[0][i] = (i + 1) * 100;
-            data1[1][i] = t1.get(i);
+            data1.add(i, t1.get(i));
         }
-        dataset.addSeries("Solid Elevator", data0);
-        dataset.addSeries("Flexible Elevator", data1);
+        XYSeriesCollection dataset = new XYSeriesCollection();
+        dataset.addSeries(data0);
+        dataset.addSeries(data1);
 
         String title = "Time Cost";
         JFreeChart chart = ChartFactory.createXYLineChart(title,"Volume", "Time/s", dataset);

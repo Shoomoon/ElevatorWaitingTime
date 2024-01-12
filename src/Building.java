@@ -43,7 +43,7 @@ public class Building {
     private void launchElevators(List<Elevator> elevators, double nextArriveTime) {
         for (Elevator elevator: elevators) {
             if (elevator.checkIfLaunch(nextArriveTime)) {
-                elevator.launch(this);
+                elevator.launch(this, nextArriveTime);
             }
         }
     }
